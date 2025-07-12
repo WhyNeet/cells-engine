@@ -1,6 +1,7 @@
 import { Table, Vector2 } from "engine";
 import { defaultProperties, Layout } from "./layout";
 import { OffscreenRenderer } from "./offscreen";
+import { Viewport } from "./viewport";
 
 const DEFAULT_TABLE_CELL_SIZE: Vector2 = [128, 28];
 
@@ -28,7 +29,10 @@ export class TableRenderer {
       ],
     });
     this.renderers = {
-      cell: new OffscreenRenderer([DEFAULT_TABLE_CELL_SIZE[0] * scale, DEFAULT_TABLE_CELL_SIZE[1] * scale]),
+      cell: new OffscreenRenderer([
+        DEFAULT_TABLE_CELL_SIZE[0] * scale,
+        DEFAULT_TABLE_CELL_SIZE[1] * scale,
+      ]),
     };
     this.prepareRenderers();
     this.resize();
@@ -40,6 +44,7 @@ export class TableRenderer {
       const delta = [e.deltaX * this.scale, e.deltaY * this.scale] as Vector2;
       this.viewport.moveBy(delta);
     });
+    this.viewport.addEventListener("change", () => this.draw());
   }
 
   private prepareRenderers() {
@@ -92,37 +97,7 @@ export class TableRenderer {
       position[0],
       position[1],
       DEFAULT_TABLE_CELL_SIZE[0] * this.scale,
-      DEFAULT_TABLE_CELL_SIZE[1] * this.scale
+      DEFAULT_TABLE_CELL_SIZE[1] * this.scale,
     );
-  }
-}
-
-export class Viewport {
-  private _size: Vector2;
-  private _anchor: Vector2;
-
-  constructor() {
-    this._size = [0, 0];
-    this._anchor = [0, 0];
-  }
-
-  public resize(size: Vector2) {
-    this._size = size;
-  }
-
-  public moveTo(anchor: Vector2) {
-    this._anchor = anchor;
-  }
-
-  public moveBy(delta: Vector2) {
-    this._anchor[0] += delta[0];
-    this._anchor[1] += delta[1];
-  }
-
-  get size() {
-    return this._size;
-  }
-  get anchor() {
-    return this._anchor;
   }
 }

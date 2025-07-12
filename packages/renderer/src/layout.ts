@@ -1,5 +1,5 @@
 import { Vector2 } from "engine";
-import { Viewport } from ".";
+import { Viewport } from "./viewport";
 
 export class Layout {
   private viewport: Viewport;
@@ -30,8 +30,8 @@ export class Layout {
     contentAnchor: Vector2;
   } {
     const cellAnchor: Vector2 = [
-      this.properties.leftBarWidth + position[0] * this.properties.cellSize[0],
-      this.properties.topBarHeight + position[1] * this.properties.cellSize[1],
+      this.properties.leftBarWidth + position[0] * this.properties.cellSize[0] - this.viewport.anchor[0],
+      this.properties.topBarHeight + position[1] * this.properties.cellSize[1] - this.viewport.anchor[1],
     ];
     return {
       cellAnchor,
