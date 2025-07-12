@@ -1,5 +1,6 @@
-import { AnyCellUpdate, Cell, CellContentUpdate, CellFormatUpdate, CellPosition } from "./cell";
+import { AnyCellUpdate, Cell, CellContentUpdate, CellFormatUpdate } from "./cell";
 import { DataFormat } from "./data";
+import { Vector2 } from "./util";
 
 export class Table {
   private _cells: Cell[][];
@@ -8,18 +9,18 @@ export class Table {
     this._cells = [];
   }
 
-  public cellAt(position: CellPosition): Cell | null {
+  public cellAt(position: Vector2): Cell | null {
     return this._cells[position[0]]?.[position[1]] ?? null;
   }
 
-  public initCell(position: CellPosition) {
+  public initCell(position: Vector2) {
     if (!this._cells[position[0]]) this._cells[position[0]] = [];
 
     const row = this._cells[position[0]];
     row[position[1]] = new Cell(position, DataFormat.Text);
   }
 
-  public updateCell(position: CellPosition, update: AnyCellUpdate) {
+  public updateCell(position: Vector2, update: AnyCellUpdate) {
     const cellAt = this.cellAt(position);
     if (!cellAt) throw new Error(`Cell at position \`${position}\` is not initialized.`);
     const cell = cellAt!;

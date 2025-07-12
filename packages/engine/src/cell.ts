@@ -1,11 +1,12 @@
 import { DataFormat } from "./data";
+import { Vector2 } from "./util";
 
 export class Cell {
-  private _position: CellPosition;
+  private _position: Vector2;
   private _format: DataFormat;
   private _data: unknown;
 
-  constructor(position: CellPosition, format: DataFormat) {
+  constructor(position: Vector2, format: DataFormat) {
     this._position = position;
     this._format = format;
     this._data = null;
@@ -38,8 +39,6 @@ export class Cell {
     this._data = value;
   }
 }
-
-export type CellPosition = [number, number];
 
 
 export class CellUpdateBuilder {
