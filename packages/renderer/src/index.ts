@@ -1,12 +1,15 @@
-import { Table, Vector2 } from "engine";
+import { ArraySlice, Cell, Table, Vector2 } from "engine";
 import { defaultProperties, Layout } from "./layout";
 import { OffscreenRenderer } from "./offscreen";
 import { Viewport } from "./viewport";
 
 const DEFAULT_TABLE_CELL_SIZE: Vector2 = [128, 28];
+const DEFAULT_LEFT_BAR_SIZE = 28;
+const DEFAULT_TOP_BAR_SIZE = 28;
 
 export class TableRenderer {
   private _table: Table;
+  private _data: ArraySlice<Cell | null>[];
   private cx: CanvasRenderingContext2D;
   private size: Vector2;
   private scale: number;
@@ -27,6 +30,8 @@ export class TableRenderer {
         DEFAULT_TABLE_CELL_SIZE[0] * scale,
         DEFAULT_TABLE_CELL_SIZE[1] * scale,
       ],
+      topBarHeight: DEFAULT_TOP_BAR_SIZE,
+      leftBarWidth: DEFAULT_LEFT_BAR_SIZE
     });
     this.renderers = {
       cell: new OffscreenRenderer([
@@ -34,8 +39,10 @@ export class TableRenderer {
         DEFAULT_TABLE_CELL_SIZE[1] * scale,
       ]),
     };
-    this.prepareRenderers();
+    this._data = [];
     this.resize();
+    this.refreshData();
+    this.prepareRenderers();
     this.attachListeners();
   }
 
@@ -62,6 +69,10 @@ export class TableRenderer {
     });
   }
 
+  private refreshData() {
+    this._data = this._table.cellRange(this.layout.startCell, this.layout.endCell);
+  }
+
   public resize() {
     const { height, width } = this.cx.canvas.getBoundingClientRect();
     this.size = [width * this.scale, height * this.scale];
@@ -74,6 +85,18 @@ export class TableRenderer {
     this.cx.clearRect(0, 0, this.size[0], this.size[1]);
 
     this.drawCells();
+    this.drawBars();
+  }
+
+  private drawBars() {
+    this.cx.fillStyle = "white";
+    this.cx.strokeStyle = "black";
+    this.cx.rect(0, 0, this.size[0], DEFAULT_TOP_BAR_SIZE * this.scale);
+    this.cx.fill();
+    this.cx.stroke();
+    this.cx.rect(0, 0, DEFAULT_LEFT_BAR_SIZE * this.scale, this.size[1]);
+    this.cx.fill();
+    this.cx.stroke();
   }
 
   private drawCells() {
@@ -83,6 +106,11 @@ export class TableRenderer {
       for (let y = from[1]; y < to[1]; y++) {
         const layout = this.layout.forCell([x, y]);
         this.drawCell(layout.cellAnchor);
+        this.drawCellContents(
+          [x, y],
+          layout.contentAnchor,
+          layout.availableContentArea,
+        );
       }
     }
   }
@@ -98,6 +126,21 @@ export class TableRenderer {
       position[1],
       DEFAULT_TABLE_CELL_SIZE[0] * this.scale,
       DEFAULT_TABLE_CELL_SIZE[1] * this.scale,
+    );
+  }
+
+  private drawCellContents(position: Vector2, viewportPosition: Vector2, size: Vector2) {
+    const text = this._data[position[0]].index(position[1])?.data?.toString();
+    if (!text) return;
+
+    this.cx.fillStyle = "black";
+    this.cx.font = `${size[1]}px monospace`;
+    this.cx.textAlign = "left";
+    this.cx.textBaseline = "middle";
+    this.cx.fillText(
+      text,
+      viewportPosition[0],
+      viewportPosition[1],
     );
   }
 }
