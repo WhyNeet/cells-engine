@@ -32,8 +32,8 @@ export class Layout extends EventTarget {
 
   public visibleCells(): [Vector2, Vector2] {
     const delta: Vector2 = [
-      Math.ceil(this.viewport.size[0] / this.properties.cellSize[0]),
-      Math.ceil(this.viewport.size[1] / this.properties.cellSize[1]),
+      Math.ceil(this.viewport.size[0] / this.properties.cellSize[0]) + 1,
+      Math.ceil(this.viewport.size[1] / this.properties.cellSize[1]) + 1,
     ];
     const anchor: Vector2 = [
       Math.floor(this.viewport.anchor[0] / this.properties.cellSize[0]),
