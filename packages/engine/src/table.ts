@@ -1,6 +1,6 @@
 import { AnyCellUpdate, Cell, CellContentUpdate, CellFormatUpdate } from "./cell";
 import { DataFormat } from "./data";
-import { Vector2 } from "./util";
+import { ArraySlice, Vector2 } from "./util";
 
 export class Table {
   private _cells: Cell[][];
@@ -11,6 +11,17 @@ export class Table {
 
   public cellAt(position: Vector2): Cell | null {
     return this._cells[position[0]]?.[position[1]] ?? null;
+  }
+
+  public cellRange(from: Vector2, to: Vector2): ArraySlice<Cell | null>[] {
+    const rows = [];
+
+    for (let i = from[1]; i < to[1]; i++) {
+      const slice = new ArraySlice(this._cells[i] ?? Array(to[0] - from[0]).map(() => null), from[0], to[0]);
+      rows.push(slice);
+    }
+
+    return rows;
   }
 
   public initCell(position: Vector2) {

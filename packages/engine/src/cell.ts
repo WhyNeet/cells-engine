@@ -33,8 +33,16 @@ export class Cell {
 
   set data(value: unknown) {
     switch (this.format) {
-      case DataFormat.Text: if (typeof value !== "string") throw new Error("Invalid value data format.")
-      case DataFormat.Number: if (typeof value !== "number") throw new Error("Invalid value data format.")
+      case DataFormat.Text:
+        if (typeof value !== "string")
+          throw new Error("Invalid value data format.");
+
+        break;
+      case DataFormat.Number:
+        if (typeof value !== "number")
+          throw new Error("Invalid value data format.");
+
+        break;
     }
     this._data = value;
   }
