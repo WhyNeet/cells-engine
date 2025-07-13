@@ -1,16 +1,33 @@
 import { Vector2 } from "engine";
 import { Viewport } from "./viewport";
+import { arrayEq } from "./util";
 
-export class Layout {
+export class Layout extends EventTarget {
   private viewport: Viewport;
   private properties: LayoutProperties;
+
+  private lastSize: [Vector2, Vector2];
 
   constructor(
     viewport: Viewport,
     properties: LayoutProperties = defaultProperties,
   ) {
+    super();
     this.viewport = viewport;
     this.properties = properties;
+    this.lastSize = [this.startCell, this.endCell];
+
+    this.viewport.addEventListener("change", this.handleViewportChange.bind(this));
+  }
+
+  private handleViewportChange() {
+    const currentSize = [this.startCell, this.endCell];
+
+    if (!arrayEq(currentSize[0], this.lastSize[0]) || !arrayEq(currentSize[1], this.lastSize[1])) {
+      this.dispatchEvent(new Event("change"));
+    }
+
+    this.lastSize = [this.startCell, this.endCell];
   }
 
   public visibleCells(): [Vector2, Vector2] {

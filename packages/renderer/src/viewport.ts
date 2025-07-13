@@ -12,6 +12,7 @@ export class Viewport extends EventTarget {
 
   public resize(size: Vector2) {
     this._size = size;
+    this.dispatchEvent(new Event("change"));
   }
 
   public moveTo(anchor: Vector2) {
