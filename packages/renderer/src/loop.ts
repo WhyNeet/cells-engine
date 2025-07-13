@@ -48,6 +48,7 @@ export class RenderLoop {
   }
 
   private runExecQueue() {
+    if (!this.execQueue.length) return;
     for (const fn of this.execQueue) fn(this.cx);
     this.execQueue = [];
   }

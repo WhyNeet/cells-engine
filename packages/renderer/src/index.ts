@@ -5,7 +5,7 @@ import { Viewport } from "./viewport";
 import { RenderLoop } from "./loop";
 
 const DEFAULT_TABLE_CELL_SIZE: Vector2 = [128, 28];
-const DEFAULT_LEFT_BAR_SIZE = 28;
+const DEFAULT_LEFT_BAR_SIZE = 48;
 const DEFAULT_TOP_BAR_SIZE = 28;
 
 export class TableRenderer {
@@ -33,8 +33,8 @@ export class TableRenderer {
         DEFAULT_TABLE_CELL_SIZE[0] * scale,
         DEFAULT_TABLE_CELL_SIZE[1] * scale,
       ],
-      topBarHeight: DEFAULT_TOP_BAR_SIZE,
-      leftBarWidth: DEFAULT_LEFT_BAR_SIZE
+      topBarHeight: DEFAULT_TOP_BAR_SIZE * scale,
+      leftBarWidth: DEFAULT_LEFT_BAR_SIZE * scale
     });
     this.renderers = {
       cell: new OffscreenRenderer([
@@ -71,12 +71,14 @@ export class TableRenderer {
       cx.fillStyle = "white";
       cx.lineWidth = this.scale;
 
-      cx.strokeRect(
+      cx.rect(
         0,
         0,
         DEFAULT_TABLE_CELL_SIZE[0] * this.scale,
         DEFAULT_TABLE_CELL_SIZE[1] * this.scale,
       );
+      cx.fill();
+      cx.stroke();
     });
   }
 
@@ -104,10 +106,45 @@ export class TableRenderer {
   private drawBars(cx: CanvasRenderingContext2D) {
     cx.fillStyle = "white";
     cx.strokeStyle = "black";
+    cx.textBaseline = "middle";
+    cx.textAlign = "center";
+    cx.lineWidth = this.scale;
+
     cx.rect(0, 0, this.size[0], DEFAULT_TOP_BAR_SIZE * this.scale);
     cx.fill();
     cx.stroke();
     cx.rect(0, 0, DEFAULT_LEFT_BAR_SIZE * this.scale, this.size[1]);
+    cx.fill();
+    cx.stroke();
+
+    cx.fillStyle = "black";
+
+    const [from, to] = this.layout.visibleCells();
+
+    for (let x = from[0]; x < to[0]; x++) {
+      const { anchor, contentAnchor } = this.layout.forTopBar(x);
+
+      cx.beginPath();
+      cx.moveTo(anchor[0] + DEFAULT_TABLE_CELL_SIZE[0] * this.scale, anchor[1]);
+      cx.lineTo(anchor[0] + DEFAULT_TABLE_CELL_SIZE[0] * this.scale, anchor[1] + DEFAULT_TOP_BAR_SIZE * this.scale);
+      cx.stroke();
+
+      cx.fillText((x + 1).toString(), contentAnchor[0], contentAnchor[1]);
+    }
+
+    for (let y = from[1]; y < to[1]; y++) {
+      const { anchor, contentAnchor } = this.layout.forLeftBar(y);
+
+      cx.beginPath();
+      cx.moveTo(anchor[0], anchor[1] + DEFAULT_TABLE_CELL_SIZE[1] * this.scale);
+      cx.lineTo(anchor[0] + DEFAULT_LEFT_BAR_SIZE * this.scale, anchor[1] + DEFAULT_TABLE_CELL_SIZE[1] * this.scale);
+      cx.stroke();
+
+      cx.fillText((y + 1).toString(), contentAnchor[0], contentAnchor[1]);
+    }
+
+    cx.fillStyle = "white";
+    cx.rect(0, 0, DEFAULT_LEFT_BAR_SIZE * this.scale, DEFAULT_TABLE_CELL_SIZE[1] * this.scale);
     cx.fill();
     cx.stroke();
   }

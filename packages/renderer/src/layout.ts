@@ -50,12 +50,10 @@ export class Layout extends EventTarget {
     const cellAnchor: Vector2 = [
       this.properties.leftBarWidth +
       position[0] * this.properties.cellSize[0] -
-      this.viewport.anchor[0] +
-      this.properties.leftBarWidth,
+      this.viewport.anchor[0],
       this.properties.topBarHeight +
       position[1] * this.properties.cellSize[1] -
-      this.viewport.anchor[1] +
-      this.properties.topBarHeight,
+      this.viewport.anchor[1],
     ];
     const contentAreaY =
       this.properties.cellSize[1] - this.properties.cellPadding.y * 2;
@@ -69,6 +67,23 @@ export class Layout extends EventTarget {
         this.properties.cellSize[0] - this.properties.cellPadding.left,
         Math.min(contentAreaY, this.properties.maxContentHeight),
       ],
+    };
+  }
+
+  public forTopBar(index: number): { anchor: Vector2, contentAnchor: Vector2 } {
+    const anchor: Vector2 = [this.properties.leftBarWidth + this.properties.cellSize[0] * index - this.viewport.anchor[0], 0];
+    const contentAnchor: Vector2 = [this.properties.leftBarWidth + this.properties.cellSize[0] * index - this.viewport.anchor[0] + this.properties.cellSize[0] / 2, this.properties.topBarHeight / 2];
+
+    return { anchor, contentAnchor };
+  }
+
+  public forLeftBar(index: number): { anchor: Vector2, contentAnchor: Vector2 } {
+    const anchor: Vector2 = [0, this.properties.topBarHeight + this.properties.cellSize[1] * index - this.viewport.anchor[1]];
+    const contentAnchor: Vector2 = [this.properties.leftBarWidth / 2, this.properties.topBarHeight + this.properties.cellSize[1] * index - this.viewport.anchor[1] + this.properties.cellSize[1] / 2];
+
+    return {
+      anchor,
+      contentAnchor
     };
   }
 
