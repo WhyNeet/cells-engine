@@ -3,11 +3,13 @@ import { Vector2 } from "engine";
 export class Viewport extends EventTarget {
   private _size: Vector2;
   private _anchor: Vector2;
+  private _scale: number;
 
-  constructor() {
+  constructor(scale: number) {
     super();
     this._size = [0, 0];
     this._anchor = [0, 0];
+    this._scale = scale;
   }
 
   public resize(size: Vector2) {
@@ -31,5 +33,9 @@ export class Viewport extends EventTarget {
   }
   get anchor() {
     return this._anchor;
+  }
+
+  get scale() {
+    return this._scale;
   }
 }

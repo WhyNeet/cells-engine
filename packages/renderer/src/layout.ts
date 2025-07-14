@@ -1,29 +1,33 @@
 import { Vector2 } from "engine";
 import { Viewport } from "./viewport";
 import { arrayEq } from "./util";
+import { RendererProperties } from ".";
 
 export class Layout extends EventTarget {
   private viewport: Viewport;
-  private properties: LayoutProperties;
+  private properties: RendererProperties;
 
   private lastSize: [Vector2, Vector2];
 
-  constructor(
-    viewport: Viewport,
-    properties: LayoutProperties = defaultProperties,
-  ) {
+  constructor(viewport: Viewport, properties: RendererProperties) {
     super();
     this.viewport = viewport;
     this.properties = properties;
     this.lastSize = [this.startCell, this.endCell];
 
-    this.viewport.addEventListener("change", this.handleViewportChange.bind(this));
+    this.viewport.addEventListener(
+      "change",
+      this.handleViewportChange.bind(this),
+    );
   }
 
   private handleViewportChange() {
     const currentSize = [this.startCell, this.endCell];
 
-    if (!arrayEq(currentSize[0], this.lastSize[0]) || !arrayEq(currentSize[1], this.lastSize[1])) {
+    if (
+      !arrayEq(currentSize[0], this.lastSize[0]) ||
+      !arrayEq(currentSize[1], this.lastSize[1])
+    ) {
       this.dispatchEvent(new Event("change"));
     }
 
@@ -48,43 +52,81 @@ export class Layout extends EventTarget {
     availableContentArea: Vector2;
   } {
     const cellAnchor: Vector2 = [
-      this.properties.leftBarWidth +
+      this.properties.leftGutterSize +
       position[0] * this.properties.cellSize[0] -
       this.viewport.anchor[0],
-      this.properties.topBarHeight +
+      this.properties.topGutterSize +
       position[1] * this.properties.cellSize[1] -
       this.viewport.anchor[1],
     ];
     const contentAreaY =
-      this.properties.cellSize[1] - this.properties.cellPadding.y * 2;
+      this.properties.cellSize[1] - this.properties.cellPadding[1] * 2;
     return {
       cellAnchor,
       contentAnchor: [
-        cellAnchor[0] + this.properties.cellPadding.left,
-        cellAnchor[1] + this.properties.cellPadding.y + contentAreaY / 2,
+        cellAnchor[0] + this.properties.cellPadding[0],
+        cellAnchor[1] + this.properties.cellPadding[1] + contentAreaY / 2,
       ],
       availableContentArea: [
-        this.properties.cellSize[0] - this.properties.cellPadding.left,
-        Math.min(contentAreaY, this.properties.maxContentHeight),
+        this.properties.cellSize[0] - this.properties.cellPadding[0],
+        Math.min(contentAreaY, this.properties.maxCellContentHeight),
       ],
     };
   }
 
-  public forTopBar(index: number): { anchor: Vector2, contentAnchor: Vector2 } {
-    const anchor: Vector2 = [this.properties.leftBarWidth + this.properties.cellSize[0] * index - this.viewport.anchor[0], 0];
-    const contentAnchor: Vector2 = [this.properties.leftBarWidth + this.properties.cellSize[0] * index - this.viewport.anchor[0] + this.properties.cellSize[0] / 2, this.properties.topBarHeight / 2];
+  public forTopBar(index: number): { anchor: Vector2; contentAnchor: Vector2 } {
+    const anchor: Vector2 = [
+      this.properties.leftGutterSize +
+      this.properties.cellSize[0] * index -
+      this.viewport.anchor[0],
+      0,
+    ];
+    const contentAnchor: Vector2 = [
+      this.properties.leftGutterSize +
+      this.properties.cellSize[0] * index -
+      this.viewport.anchor[0] +
+      this.properties.cellSize[0] / 2,
+      this.properties.topGutterSize / 2,
+    ];
 
     return { anchor, contentAnchor };
   }
 
-  public forLeftBar(index: number): { anchor: Vector2, contentAnchor: Vector2 } {
-    const anchor: Vector2 = [0, this.properties.topBarHeight + this.properties.cellSize[1] * index - this.viewport.anchor[1]];
-    const contentAnchor: Vector2 = [this.properties.leftBarWidth / 2, this.properties.topBarHeight + this.properties.cellSize[1] * index - this.viewport.anchor[1] + this.properties.cellSize[1] / 2];
+  public forLeftBar(index: number): {
+    anchor: Vector2;
+    contentAnchor: Vector2;
+  } {
+    const anchor: Vector2 = [
+      0,
+      this.properties.topGutterSize +
+      this.properties.cellSize[1] * index -
+      this.viewport.anchor[1],
+    ];
+    const contentAnchor: Vector2 = [
+      this.properties.leftGutterSize / 2,
+      this.properties.topGutterSize +
+      this.properties.cellSize[1] * index -
+      this.viewport.anchor[1] +
+      this.properties.cellSize[1] / 2,
+    ];
 
     return {
       anchor,
-      contentAnchor
+      contentAnchor,
     };
+  }
+
+  public mousePositionToCell(position: Vector2): Vector2 | null {
+    const cellPosition: Vector2 = [
+      position[0] -
+      this.properties.leftGutterSizeUnscaled -
+      (this.viewport.anchor[0] % this.properties.cellSize[0]),
+      position[1] -
+      this.properties.topGutterSizeUnscaled -
+      (this.viewport.anchor[1] % this.properties.cellSize[1]),
+    ];
+    if (cellPosition[0] < 0 || cellPosition[1] < 0) return null;
+    return [Math.floor(cellPosition[0] / this.properties.cellSizeUnscaled[0]), Math.floor(cellPosition[1] / this.properties.cellSizeUnscaled[1])];
   }
 
   get startCell(): Vector2 {
@@ -106,26 +148,4 @@ export class Layout extends EventTarget {
       ),
     ];
   }
-}
-
-export const defaultProperties: LayoutProperties = {
-  cellPadding: {
-    left: 8,
-    y: 10,
-  },
-  topBarHeight: 16,
-  leftBarWidth: 16,
-  cellSize: [128, 32],
-  maxContentHeight: 32,
-};
-
-export interface LayoutProperties {
-  topBarHeight: number;
-  leftBarWidth: number;
-  cellSize: Vector2;
-  cellPadding: {
-    left: number;
-    y: number;
-  };
-  maxContentHeight: number;
 }

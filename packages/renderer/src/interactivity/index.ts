@@ -31,7 +31,15 @@ export class SpreadsheetInteractivity {
       const delta = [e.deltaX * this.scale, e.deltaY * this.scale] as Vector2;
       this.viewport.moveBy(delta);
     });
+    this.canvas.addEventListener("mousedown", (e) => this.handleClick([e.clientX, e.clientY]))
     this.viewport.addEventListener("change", () => this.loop.requestRender());
     this.layout.addEventListener("change", () => this._data.refreshData());
+  }
+
+  private handleClick(position: Vector2) {
+    const { top, left } = this.canvas.getBoundingClientRect();
+    const relativePosition: Vector2 = [position[0] - left, position[1] - top];
+    const cellPosition = this.layout.mousePositionToCell(relativePosition);
+    console.log(cellPosition);
   }
 }

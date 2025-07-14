@@ -1,14 +1,10 @@
 import { Table, Vector2 } from "engine";
-import { defaultProperties, Layout } from "./layout";
+import { Layout } from "./layout";
 import { OffscreenRenderer } from "./offscreen";
 import { Viewport } from "./viewport";
 import { RenderLoop } from "./loop";
 import { RenderingBundle } from "./bundle";
 import { TableDataWindow } from "./data";
-
-const DEFAULT_TABLE_CELL_SIZE: Vector2 = [128, 28];
-const DEFAULT_LEFT_BAR_SIZE = 48;
-const DEFAULT_TOP_BAR_SIZE = 28;
 
 export class TableRenderer {
   private _table: Table;
@@ -16,33 +12,22 @@ export class TableRenderer {
   private loop: RenderLoop;
   private canvas: HTMLCanvasElement;
   private size: Vector2;
-  private scale: number;
   private viewport: Viewport;
   private layout: Layout;
+  private properties: RendererProperties;
 
   private renderers: { cell: OffscreenRenderer };
 
-  constructor(table: Table, cx: CanvasRenderingContext2D, scale = 2) {
+  constructor(table: Table, cx: CanvasRenderingContext2D, properties: RendererProperties) {
     this._table = table;
     this.canvas = cx.canvas;
     this.loop = new RenderLoop(cx);
-    this.scale = scale;
     this.size = [0, 0];
-    this.viewport = new Viewport();
-    this.layout = new Layout(this.viewport, {
-      ...defaultProperties,
-      cellSize: [
-        DEFAULT_TABLE_CELL_SIZE[0] * scale,
-        DEFAULT_TABLE_CELL_SIZE[1] * scale,
-      ],
-      topBarHeight: DEFAULT_TOP_BAR_SIZE * scale,
-      leftBarWidth: DEFAULT_LEFT_BAR_SIZE * scale
-    });
+    this.properties = properties;
+    this.viewport = new Viewport(properties.scale);
+    this.layout = new Layout(this.viewport, properties);
     this.renderers = {
-      cell: new OffscreenRenderer([
-        DEFAULT_TABLE_CELL_SIZE[0] * scale,
-        DEFAULT_TABLE_CELL_SIZE[1] * scale,
-      ]),
+      cell: new OffscreenRenderer(properties.cellSize),
     };
     this._data = new TableDataWindow(this._table, this.layout);
 
@@ -61,13 +46,13 @@ export class TableRenderer {
     this.renderers.cell.draw((cx) => {
       cx.strokeStyle = "black";
       cx.fillStyle = "white";
-      cx.lineWidth = this.scale;
+      cx.lineWidth = this.properties.scale;
 
       cx.rect(
         0,
         0,
-        DEFAULT_TABLE_CELL_SIZE[0] * this.scale,
-        DEFAULT_TABLE_CELL_SIZE[1] * this.scale,
+        this.properties.cellSize[0],
+        this.properties.cellSize[1],
       );
       cx.fill();
       cx.stroke();
@@ -81,7 +66,7 @@ export class TableRenderer {
 
   private resize() {
     const { height, width } = this.canvas.getBoundingClientRect();
-    this.size = [width * this.scale, height * this.scale];
+    this.size = [width * this.properties.scale, height * this.properties.scale];
     this.canvas.width = this.size[0];
     this.canvas.height = this.size[1];
     this.viewport.resize(this.size);
@@ -96,17 +81,17 @@ export class TableRenderer {
     cx.strokeStyle = "black";
     cx.textBaseline = "middle";
     cx.textAlign = "center";
-    cx.lineWidth = this.scale;
+    cx.lineWidth = this.viewport.scale;
 
-    cx.rect(0, 0, this.size[0], DEFAULT_TOP_BAR_SIZE * this.scale);
+    cx.rect(0, 0, this.size[0], this.properties.topGutterSize);
     cx.fill();
     cx.stroke();
-    cx.rect(0, 0, DEFAULT_LEFT_BAR_SIZE * this.scale, this.size[1]);
+    cx.rect(0, 0, this.properties.leftGutterSize, this.size[1]);
     cx.fill();
     cx.stroke();
 
     cx.fillStyle = "black";
-    cx.font = `${12 * this.scale}px monospace`;
+    cx.font = `${12 * this.viewport.scale}px monospace`;
 
     const [from, to] = this.layout.visibleCells();
 
@@ -114,8 +99,8 @@ export class TableRenderer {
       const { anchor, contentAnchor } = this.layout.forTopBar(x);
 
       cx.beginPath();
-      cx.moveTo(anchor[0] + DEFAULT_TABLE_CELL_SIZE[0] * this.scale, anchor[1]);
-      cx.lineTo(anchor[0] + DEFAULT_TABLE_CELL_SIZE[0] * this.scale, anchor[1] + DEFAULT_TOP_BAR_SIZE * this.scale);
+      cx.moveTo(anchor[0] + this.properties.cellSize[0], anchor[1]);
+      cx.lineTo(anchor[0] + this.properties.cellSize[0], anchor[1] + this.properties.topGutterSize);
       cx.stroke();
 
       cx.fillText((x + 1).toString(), contentAnchor[0], contentAnchor[1]);
@@ -125,15 +110,15 @@ export class TableRenderer {
       const { anchor, contentAnchor } = this.layout.forLeftBar(y);
 
       cx.beginPath();
-      cx.moveTo(anchor[0], anchor[1] + DEFAULT_TABLE_CELL_SIZE[1] * this.scale);
-      cx.lineTo(anchor[0] + DEFAULT_LEFT_BAR_SIZE * this.scale, anchor[1] + DEFAULT_TABLE_CELL_SIZE[1] * this.scale);
+      cx.moveTo(anchor[0], anchor[1] + this.properties.cellSize[1]);
+      cx.lineTo(anchor[0] + this.properties.leftGutterSize, anchor[1] + this.properties.cellSize[1]);
       cx.stroke();
 
       cx.fillText((y + 1).toString(), contentAnchor[0], contentAnchor[1]);
     }
 
     cx.fillStyle = "white";
-    cx.rect(0, 0, DEFAULT_LEFT_BAR_SIZE * this.scale, DEFAULT_TABLE_CELL_SIZE[1] * this.scale);
+    cx.rect(0, 0, this.properties.leftGutterSize, this.properties.cellSize[1]);
     cx.fill();
     cx.stroke();
   }
@@ -158,14 +143,14 @@ export class TableRenderer {
   private drawCell(position: Vector2, cx: CanvasRenderingContext2D) {
     cx.strokeStyle = "black";
     cx.fillStyle = "white";
-    cx.lineWidth = this.scale;
+    cx.lineWidth = this.viewport.scale;
 
     cx.drawImage(
       this.renderers.cell.image(),
       position[0],
       position[1],
-      DEFAULT_TABLE_CELL_SIZE[0] * this.scale,
-      DEFAULT_TABLE_CELL_SIZE[1] * this.scale,
+      this.properties.cellSize[0],
+      this.properties.cellSize[1],
     );
   }
 
@@ -185,9 +170,57 @@ export class TableRenderer {
   }
 
   public bundle(): RenderingBundle {
-    return new RenderingBundle(this._table, this.loop, this.canvas, this.scale, this.size, this.viewport, this.layout, this._data);
+    return new RenderingBundle(this._table, this.loop, this.canvas, this.viewport.scale, this.size, this.viewport, this.layout, this._data);
   }
 }
 
 
 export * from "./interactivity";
+
+
+export class RendererProperties {
+  constructor(private _cellSize: Vector2,
+    private _topGutterSize: number,
+    private _leftGutterSize: number,
+    private _maxCellContentHeight: number,
+    private _scale: number,
+    private _cellPadding: Vector2) {
+
+  }
+
+  get cellSize(): Vector2 {
+    return [this._cellSize[0] * this.scale, this._cellSize[1] * this.scale];
+  }
+
+  get cellSizeUnscaled(): Vector2 {
+    return this._cellSize;
+  }
+
+  get topGutterSize() {
+    return this._topGutterSize * this.scale;
+  }
+
+  get topGutterSizeUnscaled() {
+    return this._topGutterSize;
+  }
+
+  get leftGutterSize() {
+    return this._leftGutterSize * this.scale;
+  }
+
+  get leftGutterSizeUnscaled() {
+    return this._leftGutterSize;
+  }
+
+  get maxCellContentHeight() {
+    return this._maxCellContentHeight * this.scale;
+  }
+
+  get cellPadding() {
+    return [this._cellPadding[0] * this.scale, this._cellPadding[1] * this.scale];
+  }
+
+  get scale() {
+    return this._scale;
+  }
+}
