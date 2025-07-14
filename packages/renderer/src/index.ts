@@ -1,8 +1,10 @@
-import { ArraySlice, Cell, Table, Vector2 } from "engine";
+import { Table, Vector2 } from "engine";
 import { defaultProperties, Layout } from "./layout";
 import { OffscreenRenderer } from "./offscreen";
 import { Viewport } from "./viewport";
 import { RenderLoop } from "./loop";
+import { RenderingBundle } from "./bundle";
+import { TableDataWindow } from "./data";
 
 const DEFAULT_TABLE_CELL_SIZE: Vector2 = [128, 28];
 const DEFAULT_LEFT_BAR_SIZE = 48;
@@ -10,7 +12,7 @@ const DEFAULT_TOP_BAR_SIZE = 28;
 
 export class TableRenderer {
   private _table: Table;
-  private _data: ArraySlice<Cell | null>[];
+  private _data: TableDataWindow;
   private loop: RenderLoop;
   private canvas: HTMLCanvasElement;
   private size: Vector2;
@@ -42,10 +44,9 @@ export class TableRenderer {
         DEFAULT_TABLE_CELL_SIZE[1] * scale,
       ]),
     };
-    this._data = [];
+    this._data = new TableDataWindow(this._table, this.layout);
 
     this.prepareLoop();
-    this.attachListeners();
     this.prepareRenderers();
     this.loop.run();
   }
@@ -54,15 +55,6 @@ export class TableRenderer {
     this.loop.add(this.clear.bind(this));
     this.loop.add(this.drawCells.bind(this));
     this.loop.add(this.drawBars.bind(this));
-  }
-
-  private attachListeners() {
-    this.canvas.addEventListener("wheel", (e) => {
-      const delta = [e.deltaX * this.scale, e.deltaY * this.scale] as Vector2;
-      this.viewport.moveBy(delta);
-    });
-    this.viewport.addEventListener("change", () => this.loop.requestRender());
-    this.layout.addEventListener("change", () => this.refreshData());
   }
 
   private prepareRenderers() {
@@ -80,10 +72,6 @@ export class TableRenderer {
       cx.fill();
       cx.stroke();
     });
-  }
-
-  private refreshData() {
-    this._data = this._table.cellRange(this.layout.startCell, this.layout.endCell);
   }
 
   public requestResize() {
@@ -118,6 +106,7 @@ export class TableRenderer {
     cx.stroke();
 
     cx.fillStyle = "black";
+    cx.font = `${12 * this.scale}px monospace`;
 
     const [from, to] = this.layout.visibleCells();
 
@@ -181,7 +170,7 @@ export class TableRenderer {
   }
 
   private drawCellContents(position: Vector2, viewportPosition: Vector2, size: Vector2, cx: CanvasRenderingContext2D) {
-    const text = this._data[position[0]]?.index(position[1])?.data?.toString();
+    const text = this._data.data[position[0]]?.index(position[1])?.data?.toString();
     if (!text) return;
 
     cx.fillStyle = "black";
@@ -194,4 +183,11 @@ export class TableRenderer {
       viewportPosition[1],
     );
   }
+
+  public bundle(): RenderingBundle {
+    return new RenderingBundle(this._table, this.loop, this.canvas, this.scale, this.size, this.viewport, this.layout, this._data);
+  }
 }
+
+
+export * from "./interactivity";
