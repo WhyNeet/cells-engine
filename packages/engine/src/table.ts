@@ -24,11 +24,14 @@ export class Table {
     return rows;
   }
 
-  public initCell(position: Vector2) {
+  public initCell(position: Vector2): Cell {
     if (!this._cells[position[0]]) this._cells[position[0]] = [];
 
     const row = this._cells[position[0]];
-    row[position[1]] = new Cell(position, DataFormat.Text);
+    const cell = new Cell(position, DataFormat.Text);
+    row[position[1]] = cell;
+
+    return cell;
   }
 
   public updateCell(position: Vector2, update: AnyCellUpdate) {
