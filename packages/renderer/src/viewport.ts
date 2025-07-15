@@ -34,6 +34,9 @@ export class Viewport extends EventTarget {
   get anchor() {
     return this._anchor;
   }
+  get anchorUnscaled(): Vector2 {
+    return [this._anchor[0] / this.scale, this._anchor[1] / this.scale];
+  }
 
   get scale() {
     return this._scale;

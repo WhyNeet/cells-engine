@@ -59,6 +59,10 @@ export class TableRenderer {
     });
   }
 
+  public requestRedraw() {
+    this.loop.requestRender();
+  }
+
   public requestResize() {
     this.loop.enq(this.resize.bind(this));
     this.loop.requestRender();
@@ -171,6 +175,10 @@ export class TableRenderer {
 
   public bundle(): RenderingBundle {
     return new RenderingBundle(this._table, this.loop, this.canvas, this.viewport.scale, this.size, this.viewport, this.layout, this._data);
+  }
+
+  get view() {
+    return this.viewport;
   }
 }
 
